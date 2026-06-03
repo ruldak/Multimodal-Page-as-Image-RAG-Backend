@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     LANCEDB_URI: str = "/app/data/lancedb"
     VOYAGE_API_KEY: str
     GEMINI_API_KEY: str
-    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_URL: str = "redis://127.0.0.1:6379/0"
     APP_ENV: str = "development"
     LOG_LEVEL: str = "INFO"
     MAX_UPLOAD_SIZE: int = 52428800

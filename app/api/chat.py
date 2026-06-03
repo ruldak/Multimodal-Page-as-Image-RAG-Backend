@@ -23,7 +23,7 @@ from app.models.schemas import (
     ChatMessageOut,
     CitationOut,
 )
-from app.main import DocumentNotReadyException, UpstreamAPIException
+from app.exceptions import DocumentNotReadyException, UpstreamAPIException
 
 router = APIRouter(prefix="/api/v1/chat/sessions", tags=["chat"])
 logger = logging.getLogger(__name__)
@@ -43,12 +43,19 @@ async def create_session(
     db: AsyncSession = Depends(get_async_session)
 ):
     try:
+        document_exist = await doc_service.get_document(db=db, document_id=str(req.document_id) if req.document_id else None)
+
+        if document_exist == None:
+            raise HTTPException(status_code=404, detail="Document Not Found")
+
         session = await chat_service.create_session(
             db, 
             title=req.title, 
             document_id=str(req.document_id) if req.document_id else None
         )
         return session
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         logger.error(f"Database error creating session: {e}")
         raise HTTPException(status_code=500, detail="Failed to create chat session")

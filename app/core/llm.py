@@ -1,52 +1,54 @@
 import os
 import base64
 from typing import List, Dict, Any, Optional
-from llama_index.llms.gemini import Gemini
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.schema import ImageNode
-import google.generativeai as genai
+from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from google.genai import types
 import logging
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_SYSTEM_PROMPT = "Jawab berdasarkan halaman dokumen berikut. Setiap halaman adalah gambar."
+
+
 class GeminiMultimodalClient:
     """
-    Multimodal client wrapping llama-index-llms-gemini.
+    Multimodal client using llama-index-llms-google-genai (latest).
     Handles interleaved image+text prompts for page-as-image RAG.
     """
-    def __init__(self, api_key: str, model: str = "models/gemini-1.5-flash"):
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "gemini-2.5-flash",
+    ):
         self.api_key = api_key
         self.model = model
-        genai.configure(api_key=api_key)
-        self._llm = Gemini(api_key=api_key, model_name=model)
+        self._llm = GoogleGenAI(
+            model=model,
+            api_key=api_key,
+        )
 
     async def generate_from_images(
         self,
         query: str,
         image_paths: List[str],
         history: List[Dict[str, str]],
-        system_prompt: str = "Jawab berdasarkan halaman dokumen berikut. Setiap halaman adalah gambar."
+        system_prompt: str = DEFAULT_SYSTEM_PROMPT,
     ) -> Dict[str, Any]:
         """
         Build a multimodal prompt with system text, interleaved images+page labels,
-        history, and current query. Call Gemini via google-generativeai SDK.
+        history, and current query. Call Gemini via GoogleGenAI.
         """
-        # Build contents for Gemini API
-        contents = []
+        # Build blocks for current turn: system + images + query
+        blocks = [TextBlock(text=system_prompt)]
 
-        # System prompt as first user message part
-        parts = [{"text": system_prompt}]
-
-        # Interleave images with page labels
-        for idx, img_path in enumerate(image_paths):
+        for img_path in image_paths:
             if not os.path.exists(img_path):
                 logger.warning(f"Image path missing: {img_path}")
                 continue
-            with open(img_path, "rb") as f:
-                img_bytes = f.read()
-            b64 = base64.b64encode(img_bytes).decode("utf-8")
-            page_num = idx + 1  # fallback; caller should pass page_numbers if needed
-            # Extract page number from filename if possible
+
+            # Extract page number from filename
+            page_num = 0
             try:
                 basename = os.path.basename(img_path)
                 if "page_" in basename:
@@ -54,56 +56,48 @@ class GeminiMultimodalClient:
             except Exception:
                 pass
 
-            parts.append({
-                "inline_data": {
-                    "mime_type": "image/png",
-                    "data": b64
-                }
-            })
-            parts.append({"text": f"[Halaman {page_num}]"})
+            blocks.append(ImageBlock(path=img_path, image_mimetype="image/png"))
+            blocks.append(TextBlock(text=f"[Halaman {page_num}]"))
 
-        # Add history
+        blocks.append(TextBlock(text=query))
+
+        # Build ChatMessage list from history
+        messages = []
         for msg in history:
             role = msg.get("role", "user")
             content = msg.get("content", "")
-            # Map to Gemini roles: user/model
-            gemini_role = "user" if role in ("user", "system") else "model"
-            contents.append({
-                "role": gemini_role,
-                "parts": [{"text": content}]
-            })
+            if role == "user":
+                messages.append(ChatMessage(role="user", content=content))
+            elif role == "assistant":
+                messages.append(ChatMessage(role="assistant", content=content))
 
-        # Add current query
-        parts.append({"text": query})
-
-        # The system+images+query go as one user turn
-        contents.append({
-            "role": "user",
-            "parts": parts
-        })
+        # Add current turn with images
+        messages.append(ChatMessage(role="user", blocks=blocks))
 
         try:
-            model = genai.GenerativeModel(self.model)
-            response = await model.generate_content_async(contents)
+            response = await self._llm.achat(messages)
 
-            # Extract token counts if available
+            # Extract token counts from raw response if available
             prompt_tokens = 0
             candidates_tokens = 0
             total_tokens = 0
             try:
-                usage = response.usage_metadata
-                prompt_tokens = usage.prompt_token_count
-                candidates_tokens = usage.candidates_token_count
-                total_tokens = usage.total_token_count
+                raw = response.raw
+                if hasattr(raw, "usage_metadata"):
+                    usage = raw.usage_metadata
+                    prompt_tokens = getattr(usage, "prompt_token_count", 0)
+                    candidates_tokens = getattr(usage, "candidates_token_count", 0)
+                    total_tokens = getattr(usage, "total_token_count", 0)
             except Exception:
                 pass
 
             return {
-                "text": response.text,
+                "text": response.message.content,
                 "prompt_token_count": prompt_tokens,
                 "candidates_token_count": candidates_tokens,
                 "total_token_count": total_tokens,
             }
+
         except Exception as e:
             logger.error(f"Gemini generation failed: {e}")
             raise

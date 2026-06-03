@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import create_engine, sessionmaker
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 from app.config import settings
 
 # Async engine & session for FastAPI

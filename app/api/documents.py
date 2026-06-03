@@ -19,7 +19,12 @@ from app.models.schemas import (
     DocumentStatusResponse,
 )
 from tasks.document_tasks import process_document_task
-from app.main import DocumentNotReadyException, UpstreamAPIException
+from app.exceptions import DocumentNotReadyException, UpstreamAPIException
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+UPLOAD_DIR = BASE_DIR / "uploads"
+PAGES_DIR = BASE_DIR / "data" / "pages"
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 logger = logging.getLogger(__name__)
@@ -41,26 +46,25 @@ async def upload_document(
         if len(contents) > settings.MAX_UPLOAD_SIZE:
             raise HTTPException(status_code=413, detail="File exceeds maximum upload size")
 
-        # Save file
+        # Save file with pathlib
         file_id = str(uuid.uuid4())
         safe_filename = os.path.basename(file.filename)
-        file_path = f"/app/uploads/{file_id}_{safe_filename}"
-
-        os.makedirs("/app/uploads", exist_ok=True)
-        with open(file_path, "wb") as f:
-            f.write(contents)
+        file_path = UPLOAD_DIR / f"{file_id}_{safe_filename}"
+        
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(contents)
 
         # Create document record
         try:
-            doc = await doc_service.create_document(db, safe_filename, file_path)
+            doc = await doc_service.create_document(db, safe_filename, str(file_path))
         except SQLAlchemyError as e:
             logger.error(f"Database error creating document: {e}")
-            os.remove(file_path)
+            file_path.unlink(missing_ok=True)
             raise HTTPException(status_code=500, detail="Failed to save document metadata")
 
         # Enqueue Celery task
         try:
-            task = process_document_task.delay(str(doc["id"]), file_path)
+            task = process_document_task.delay(str(doc["id"]), str(file_path))
             await doc_service.update_task_id(db, doc["id"], task.id)
         except Exception as e:
             logger.error(f"Celery enqueue failed: {e}")
@@ -163,7 +167,7 @@ async def delete_document(
         lancedb = LanceDBManager(uri=settings.LANCEDB_URI)
         doc_service_with_lance = DocumentService(lancedb_manager=lancedb)
         await doc_service_with_lance.delete_document(db, document_id)
-        return JSONResponse(status_code=status.HTTP_204_NO_CONTENT)
+        return JSONResponse(content={"message": "No Content"}, status_code=status.HTTP_204_NO_CONTENT)
     except HTTPException:
         raise
     except SQLAlchemyError as e:

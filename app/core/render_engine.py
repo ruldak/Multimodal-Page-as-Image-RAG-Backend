@@ -22,6 +22,8 @@ def render_pdf_pages(
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
     os.makedirs(output_dir, exist_ok=True)
+    logger.info(f"DEBUG: output_dir = {output_dir}")
+    logger.info(f"DEBUG: output_dir exists = {os.path.exists(output_dir)}")
 
     try:
         images = convert_from_path(pdf_path, dpi=dpi, fmt=fmt)
@@ -31,7 +33,9 @@ def render_pdf_pages(
     pages = []
     for i, image in enumerate(images, start=1):
         image_path = os.path.join(output_dir, f"page_{i}.{fmt}")
+        logger.info(f"DEBUG: saving to {image_path}")
         image.save(image_path, fmt.upper())
+        logger.info(f"DEBUG: saved, exists = {os.path.exists(image_path)}")
         file_size_kb = os.path.getsize(image_path) // 1024
         pages.append({
             "page_number": i,

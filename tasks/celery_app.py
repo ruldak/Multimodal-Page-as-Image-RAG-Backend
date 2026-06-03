@@ -8,6 +8,10 @@ celery_app = Celery(
     include=["tasks.document_tasks"],
 )
 
+print("===============================")
+print(settings.REDIS_URL)
+print("================================")
+
 celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],

@@ -11,10 +11,14 @@ from app.core.embedding import VoyageMultimodalEmbedding
 from app.core.vector_store import LanceDBManager
 from app.config import settings
 import logging
+from tasks.celery_app import celery_app
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
 def process_document_task(self, document_id: str, file_path: str) -> Dict[str, Any]:
     """
     Background task: render PDF -> embed -> index.
@@ -25,10 +29,10 @@ def process_document_task(self, document_id: str, file_path: str) -> Dict[str, A
         doc_service = DocumentService()
         doc_service.update_status_sync(db, document_id, "rendering")
 
-        output_dir = f"/app/data/pages/{document_id}"
+        output_dir = BASE_DIR / "data" / "pages" / document_id
         pages = render_pdf_pages(
             file_path,
-            output_dir=output_dir,
+            output_dir=str(output_dir),
             dpi=settings.PAGE_RENDER_DPI,
             fmt=settings.PAGE_RENDER_FMT,
         )
@@ -54,7 +58,7 @@ def process_document_task(self, document_id: str, file_path: str) -> Dict[str, A
                     "image_path": page["image_path"],
                     "embedding": embedding,
                     "metadata": {
-                        "filename": os.path.basename(file_path),
+                        "filename": Path(file_path).name,
                         "render_dpi": page["render_dpi"],
                         "file_size_kb": page["file_size_kb"],
                     }

@@ -6,6 +6,7 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field
 import voyageai
 import logging
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class VoyageMultimodalEmbedding(BaseEmbedding):
         """Sync text embedding."""
         try:
             result = self._client.multimodal_embed(
-                inputs=[[{"type": "text", "text": text}]],
+                inputs=[[text]],
                 model=self.model
             )
             return result.embeddings[0]
@@ -51,18 +52,15 @@ class VoyageMultimodalEmbedding(BaseEmbedding):
         return await self._aget_text_embedding(query)
 
     def get_image_embedding(self, image_path: str) -> List[float]:
-        """Sync image embedding via base64."""
+        """Sync image embedding via PIL."""
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found: {image_path}")
 
-        with open(image_path, "rb") as f:
-            img_bytes = f.read()
-        b64 = base64.b64encode(img_bytes).decode("utf-8")
-        data_url = f"data:image/png;base64,{b64}"
+        pil_image = Image.open(image_path)
 
         try:
             result = self._client.multimodal_embed(
-                inputs=[[{"type": "image_url", "url": data_url}]],
+                inputs=[[pil_image]],
                 model=self.model
             )
             return result.embeddings[0]

@@ -53,7 +53,7 @@ class DocumentService:
                 .options(joinedload(Document.pages))
                 .where(Document.id == uuid.UUID(document_id))
             )
-            doc = result.scalar_one_or_none()
+            doc = result.unique().scalar_one_or_none()
             if not doc:
                 return None
             return {
