@@ -30,18 +30,23 @@ Instead of parsing PDFs as plain text, this project takes a visual approach:
 
 Below is the end-to-end architecture showing the separation of concerns between the **Asynchronous Ingestion Pipeline** (handled in background workers) and the **RAG Query Pipeline** (handled in FastAPI):
 
+### Ingestion Pipeline
 ```mermaid
 graph TD
     subgraph IngestionPipeline["Asynchronous Ingestion (Celery & Redis)"]
         A[User Uploads PDF] -->|FastAPI saves PDF| B[Create Pending DB Record]
         B -->|Enqueue Job| C[Celery Task Queue via Redis]
-        C -->|1. Render PDF| D[Poppler & pdf2image render pages to PNG]
-        D -->|2. Generate Embeddings| E[Voyage Multimodal 3.5 API]
-        E -->|3. Store Vectors| F[LanceDB Vector Database]
-        E -->|4. Store Metadata| G[PostgreSQL Database]
+        C -->|Render PDF| D[Poppler & pdf2image render pages to PNG]
+        D -->|Generate Embeddings| E[Voyage Multimodal 3.5 API]
+        E -->|Store Vectors| F[LanceDB Vector Database]
+        E -->|Store Metadata| G[PostgreSQL Database]
         G -->|Status = indexed| H[Document Ready for RAG]
     end
+```
 
+### Query Pipeline
+```mermaid
+graph TD
     subgraph QueryPipeline["Conversational Multimodal RAG"]
         I[User Sends Query / Chat] -->|FastAPI| J[Fetch Chat Session & History]
         J -->|Embed Text Query| K[Voyage Text Embedder]
