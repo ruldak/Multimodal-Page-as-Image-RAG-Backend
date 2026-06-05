@@ -32,7 +32,7 @@ Below is the end-to-end architecture showing the separation of concerns between 
 
 ```mermaid
 graph TD
-    subgraph Ingestion Pipeline [Asynchronous Ingestion (Celery & Redis)]
+    subgraph IngestionPipeline["Asynchronous Ingestion (Celery & Redis)"]
         A[User Uploads PDF] -->|FastAPI saves PDF| B[Create Pending DB Record]
         B -->|Enqueue Job| C[Celery Task Queue via Redis]
         C -->|1. Render PDF| D[Poppler & pdf2image render pages to PNG]
@@ -42,7 +42,7 @@ graph TD
         G -->|Status = indexed| H[Document Ready for RAG]
     end
 
-    subgraph Query Pipeline [Conversational Multimodal RAG]
+    subgraph QueryPipeline["Conversational Multimodal RAG"]
         I[User Sends Query / Chat] -->|FastAPI| J[Fetch Chat Session & History]
         J -->|Embed Text Query| K[Voyage Text Embedder]
         K -->|Vector Search| L[LanceDB Similarity Match]
