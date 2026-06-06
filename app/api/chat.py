@@ -34,8 +34,7 @@ doc_service = DocumentService()
 # Initialize core components
 embedder = VoyageMultimodalEmbedding(api_key=settings.VOYAGE_API_KEY)
 gemini_client = GeminiMultimodalClient(api_key=settings.GEMINI_API_KEY)
-lancedb = LanceDBManager(uri=settings.LANCEDB_URI)
-rag_engine = RAGEngine(lancedb_manager=lancedb, embedder=embedder, llm_client=gemini_client)
+rag_engine = RAGEngine(embedder=embedder, llm_client=gemini_client)
 
 @router.post("", response_model=ChatSessionOut, status_code=status.HTTP_201_CREATED)
 async def create_session(

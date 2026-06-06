@@ -18,11 +18,9 @@ class RAGEngine:
     """
     def __init__(
         self,
-        lancedb_manager: LanceDBManager,
         embedder: VoyageMultimodalEmbedding,
         llm_client: GeminiMultimodalClient
     ):
-        self.lancedb = lancedb_manager
         self.embedder = embedder
         self.llm = llm_client
 
@@ -48,9 +46,11 @@ class RAGEngine:
         logger.info(f"Embedding query for session {session_id}")
         query_vector = await self.embedder._aget_query_embedding(message)
 
+        lancedb = LanceDBManager(uri=settings.LANCEDB_URI)
+
         # 2. Retrieve page images from LanceDB
         logger.info(f"Searching LanceDB for document {document_id}, top_k={top_k}")
-        results = self.lancedb.search(query_vector, document_id=document_id, top_k=top_k)
+        results = lancedb.search(query_vector, document_id=document_id, top_k=top_k)
 
         if not results:
             logger.warning(f"No pages retrieved for document {document_id}")
@@ -64,6 +64,16 @@ class RAGEngine:
                 valid_results.append(r)
             else:
                 logger.warning(f"Missing image file: {r['image_path']}")
+
+        for i in valid_results:
+            print("=========== valid result ==========")
+            print(i)
+            print("=====================")
+
+        for i in image_paths:
+            print("=========== image paths ==========")
+            print(i)
+            print("=====================")
 
         # 3. Generate with Gemini
         start_time = time.monotonic()
