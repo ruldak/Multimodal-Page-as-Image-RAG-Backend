@@ -1,7 +1,9 @@
 import time
+import json
 import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -19,9 +21,6 @@ from app.models.schemas import (
     ChatSessionListResponse,
     ChatSessionDetail,
     ChatSendRequest,
-    ChatSendResponse,
-    ChatMessageOut,
-    CitationOut,
 )
 from app.exceptions import DocumentNotReadyException, UpstreamAPIException
 
@@ -97,83 +96,70 @@ async def get_session(
         logger.error(f"Unexpected error getting session {session_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/{session_id}/send", response_model=ChatSendResponse)
-async def send_message(
+@router.post("/{session_id}/send")
+async def send_message_stream(
     session_id: str,
     req: ChatSendRequest,
     db: AsyncSession = Depends(get_async_session)
 ):
-    try:
-        # Validate session
-        session = await chat_service.get_session(db, session_id)
-        if not session:
-            raise HTTPException(status_code=404, detail="Session not found")
+    # 1. Validasi Session & Dokumen
+    session = await chat_service.get_session(db, session_id)
+    if not session: raise HTTPException(status_code=404, detail="Session not found")
 
-        # Validate document readiness
-        if session.document_id:
-            try:
-                doc = await doc_service.get_document(db, str(session.document_id))
-            except SQLAlchemyError as e:
-                logger.error(f"Database error getting document for session {session_id}: {e}")
-                raise HTTPException(status_code=500, detail="Failed to verify document status")
+    if session.document_id:
+        doc = await doc_service.get_document(db, str(session.document_id))
+        if not doc: raise HTTPException(status_code=404, detail="Attached document not found")
+        if doc["status"] != "indexed": raise DocumentNotReadyException(status=doc["status"])
 
-            if not doc:
-                raise HTTPException(status_code=404, detail="Attached document not found")
-            if doc["status"] != "indexed":
-                raise DocumentNotReadyException(status=doc["status"])
+    history = await chat_service.get_last_n_messages(db, session_id, limit=settings.CHAT_HISTORY_LIMIT)
 
-        # Get history
+    # 2. Async Generator untuk SSE
+    async def event_generator():
+        full_text = ""
+        citations_data = []
+        metadata_data = {}
+        start_time = time.monotonic()
+
         try:
-            history = await chat_service.get_last_n_messages(
-                db, session_id, limit=settings.CHAT_HISTORY_LIMIT
-            )
-        except SQLAlchemyError as e:
-            logger.error(f"Database error getting history for session {session_id}: {e}")
-            raise HTTPException(status_code=500, detail="Failed to retrieve chat history")
-
-        # Run RAG
-        try:
-            result = await rag_engine.chat(
-                session_id=session_id,
-                message=req.message,
-                document_id=str(session.document_id) if session.document_id else None,
-                history=history,
-            )
-        except Exception as e:
-            logger.error(f"RAG engine error for session {session_id}: {e}")
-            raise UpstreamAPIException(message=str(e))
-
-        # Save messages
-        try:
+            # Simpan pesan user ke DB sebelum mulai stream
             await chat_service.add_message(db, session_id, "user", req.message)
-            assistant_msg = await chat_service.add_message(
-                db, session_id, "assistant", result["text"],
-                sources=result["citations"],
-                model="gemini-1.5-flash",
-                latency_ms=result["latency_ms"],
-                token_count=result["total_token_count"],
-            )
-        except SQLAlchemyError as e:
-            logger.error(f"Database error saving messages for session {session_id}: {e}")
-            raise HTTPException(status_code=500, detail="Failed to save chat messages")
 
-        return ChatSendResponse(
-            message=ChatMessageOut(**assistant_msg),
-            session_id=session.id,
-            citations=[CitationOut(**c) for c in result["citations"]],
-        )
-    except HTTPException:
-        raise
-    except DocumentNotReadyException:
-        raise
-    except UpstreamAPIException:
-        raise
-    except SQLAlchemyError as e:
-        logger.error(f"Database error in send_message: {e}")
-        raise HTTPException(status_code=500, detail="Database error")
-    except Exception as e:
-        logger.error(f"Unexpected error in send_message for session {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+            async for event in rag_engine.stream_chat(
+                session_id=session_id, message=req.message,
+                document_id=str(session.document_id) if session.document_id else None,
+                history=history
+            ):
+                if event["type"] == "citations":
+                    citations_data = event["data"]
+                    yield f"event: citations\ndata: {json.dumps(citations_data)}\n\n"
+                
+                elif event["type"] == "chunk":
+                    text = event["data"]["text"]
+                    full_text += text
+                    yield f"event: chunk\ndata: {json.dumps({'text': text})}\n\n"
+                
+                elif event["type"] == "metadata":
+                    metadata_data = event["data"]
+
+            # 3. Deferred Commit: Simpan respons asisten ke DB SETELAH stream selesai
+            latency_ms = int((time.monotonic() - start_time) * 1000)
+            assistant_msg = await chat_service.add_message(
+                db, session_id, "assistant", full_text,
+                sources=citations_data,
+                model="gemini-2.5-flash",
+                latency_ms=latency_ms,
+                token_count=metadata_data.get("total_token_count", 0),
+            )
+            
+            final_meta = {**metadata_data, "latency_ms": latency_ms, "message_id": str(assistant_msg.get("id"))}
+            yield f"event: metadata\ndata: {json.dumps(final_meta)}\n\n"
+            yield "event: done\ndata: [DONE]\n\n"
+
+        except Exception as e:
+            logger.error(f"Stream error: {e}")
+            yield f"event: error\ndata: {json.dumps({'detail': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
