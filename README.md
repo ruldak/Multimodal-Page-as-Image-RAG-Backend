@@ -138,6 +138,31 @@ Initialize the schema and tables in the PostgreSQL container:
 docker-compose exec api alembic upgrade head
 ```
 
+### 4. Test the Streaming Chat UI (Lightweight Tester)
+To easily test the Server-Sent Events (SSE) streaming endpoint without building a full React/Vue frontend, this project includes a standalone, user-friendly tester (`test.html`).
+
+**Step 1: Serve the HTML file locally**
+Browsers restrict `fetch` requests from local `file://` protocols due to CORS policies. To bypass this, serve the file using a simple local HTTP server. 
+Open your terminal, navigate to the folder containing `test.html`, and run:
+```bash
+# Using Python built-in HTTP server
+python -m http.server 8080
+```
+*(Alternatively, you can right-click the file and select "Open with Live Server" if you use VS Code).*
+
+**Step 2: Open and Configure**
+1. Open your browser and visit `http://localhost:8080/test.html`.
+2. **Base URL**: Enter your FastAPI backend URL (e.g., `http://localhost:8000`).
+3. **Session ID**: Paste a valid Chat Session UUID (you can create one via the `POST /api/v1/chat/sessions` endpoint).
+4. **Question**: Type your question regarding the indexed document.
+5. Click **Send & Stream**.
+
+**Step 3: Observe the Stream**
+- **Citations**: The relevant document pages will render as badges at the top almost instantly.
+- **Streaming Text**: The LLM's answer will flow in real-time with a *typewriter effect*.
+- **Metadata**: Latency statistics will appear at the bottom once the stream finishes.
+
+
 ---
 
 ## 📡 API Endpoints Reference
