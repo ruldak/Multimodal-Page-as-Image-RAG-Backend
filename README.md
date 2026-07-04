@@ -6,7 +6,7 @@ Built with **FastAPI**, **LlamaIndex**, **Voyage AI**, **Gemini 1.5/2.5 Flash**,
 
 ---
 
-## 💡 What is "Page-as-Image" Multimodal RAG? (Layman-Friendly)
+## What is "Page-as-Image" Multimodal RAG? (Layman-Friendly)
 
 ### The Problem with Traditional RAG
 When you upload a PDF to a traditional chat system (like a standard PDF chatbot), the computer tries to read it by converting the document to plain text. If your document has:
@@ -26,7 +26,7 @@ Instead of parsing PDFs as plain text, this project takes a visual approach:
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## System Architecture & Data Flow
 
 Below is the end-to-end architecture showing the separation of concerns between the **Asynchronous Ingestion Pipeline** (handled in background workers) and the **RAG Query Pipeline** (handled in FastAPI):
 
@@ -61,7 +61,7 @@ graph TD
 
 ---
 
-## 🛠️ Tech Stack & Engineering Decisions
+## Tech Stack & Engineering Decisions
 
 | Component | Technology | Rationale & Engineering Details |
 |---|---|---|
@@ -76,7 +76,7 @@ graph TD
 
 ---
 
-## 🚀 Key Technical Highlights
+## Key Technical Highlights
 
 - **Asynchronous Design**: The entire API layer is non-blocking. Database operations are handled using SQLAlchemy's async interface (`asyncpg` adapter), and long-running PDF parsing is delegated to Celery.
 - **LanceDB Concurrency Handling**: Configured with a Celery concurrency limits mechanism (`concurrency=1` on writing tasks) to prevent DB locking issues.
@@ -86,7 +86,7 @@ graph TD
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 ├── app/
@@ -108,7 +108,7 @@ graph TD
 
 ---
 
-## 🏁 Quick Start & Setup
+## Quick Start & Setup
 
 ### Prerequisites
 - Docker & Docker Compose installed.
@@ -165,7 +165,7 @@ python -m http.server 8080
 
 ---
 
-## 📡 API Endpoints Reference
+## API Endpoints Reference
 
 ### Document Management
 - `POST /api/v1/documents/upload` - Upload PDF and trigger asynchronous rendering/indexing task.
