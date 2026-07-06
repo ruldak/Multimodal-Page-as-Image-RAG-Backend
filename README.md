@@ -178,5 +178,6 @@ python -m http.server 8080
 - `POST /api/v1/chat/sessions` - Open a chat session bound to a specific document ID.
 - `GET /api/v1/chat/sessions` - Retrieve historical session list.
 - `GET /api/v1/chat/sessions/{id}` - Fetch chat history (user/assistant) and citation links.
+- `PATCH /api/v1/chat/sessions/{id}` - Update the chat session title.
 - `POST /api/v1/chat/sessions/{id}/send` - Submit a message. Runs query text embedding -> LanceDB retrieve page screenshot -> Gemini multimodal synthesis. Returns response content + tokens count + exact page source citations.
 - `DELETE /api/v1/chat/sessions/{id}` - Delete session history.

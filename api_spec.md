@@ -296,7 +296,28 @@ Gets complete details of a chat session along with its historical messages (sort
 
 ---
 
-### 2.4 Send Message & Stream Answer (SSE Stream)
+### 2.4 Update Chat Session Title
+Updates the title of an existing chat session.
+
+*   **Endpoint**: `/api/v1/chat/sessions/{session_id}`
+*   **Method**: `PATCH`
+*   **Query Parameters**:
+    *   `title` (string, required): The new title for the chat session.
+*   **Successful Response (200 OK)**:
+    ```json
+    {
+      "id": "e4f8d227-6f8d-42bc-9d0a-115f212bcde8",
+      "document_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      "title": "Updated Session Title",
+      "created_at": "2026-07-04T12:10:00.000Z"
+    }
+    ```
+*   **Potential Errors**:
+    *   `404 Not Found`: Chat session not found.
+
+---
+
+### 2.5 Send Message & Stream Answer (SSE Stream)
 The primary endpoint for AI interaction. Accepts user questions, searches for relevant PDF pages in LanceDB, retrieves the matching page images, and forwards them to Gemini LLM. The response content is streamed back in real-time using Server-Sent Events (SSE).
 
 *   **Endpoint**: `/api/v1/chat/sessions/{session_id}/send`
@@ -368,7 +389,7 @@ The following events are dispatched sequentially:
 
 ---
 
-### 2.5 Delete Chat Session
+### 2.6 Delete Chat Session
 Deletes the chat session and all its message records from the database.
 
 *   **Endpoint**: `/api/v1/chat/sessions/{session_id}`
