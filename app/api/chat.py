@@ -161,6 +161,27 @@ async def send_message_stream(
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+@router.patch("/{session_id}")
+async def edit_session(
+    session_id: str,
+    title: str,
+    db: AsyncSession = Depends(get_async_session)
+):
+    try:
+        session = await chat_service.get_session(db, session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        res = await chat_service.update_session_title(db, session_id, title)
+        return res
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        logger.error(f"Database error updating session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update session")
+    except Exception as e:
+        logger.error(f"Unexpected error update session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
     session_id: str,

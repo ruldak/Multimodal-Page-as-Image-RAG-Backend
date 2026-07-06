@@ -35,6 +35,43 @@ class ChatService:
             logger.error(f"Database error creating session: {e}")
             raise
 
+    async def update_session_title(
+        self,
+        db: AsyncSession,
+        session_id: str,
+        title: str
+    ) -> Optional[Dict[str, Any]]:
+        try:
+            session_uuid = uuid.UUID(session_id)
+            
+            session = await db.get(ChatSession, session_uuid)
+            
+            if not session:
+                logger.warning(f"Chat session with id {session_id} not found")
+                return None
+            
+            session.title = title
+            
+            await db.commit()
+            await db.refresh(session)
+            
+            logger.info(f"Successfully updated the title for chat session {session.id}")
+            
+            return {
+                "id": session.id,
+                "document_id": session.document_id,
+                "title": session.title,
+                "created_at": session.created_at,
+            }
+            
+        except SQLAlchemyError as e:
+            await db.rollback()
+            logger.error(f"Database error saat update title session: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"Format session_id UUID tidak valid: {e}")
+            raise
+
     async def get_session(
         self,
         db: AsyncSession,
