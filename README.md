@@ -1,8 +1,8 @@
-# Multimodal Page-as-Image RAG Backend
+# Multimodal Page-as-Image RAG Backend & Frontend
 
-An enterprise-ready, high-performance asynchronous REST API for Conversational Multimodal Retrieval-Augmented Generation (RAG) using the **Page-as-Image** paradigm. 
+An enterprise-ready, high-performance asynchronous REST API and React-based web UI for Conversational Multimodal Retrieval-Augmented Generation (RAG) using the **Page-as-Image** paradigm.
 
-Built with **FastAPI**, **LlamaIndex**, **Voyage AI**, **Gemini 1.5/2.5 Flash**, **LanceDB**, and **Celery**, this system indexes PDF documents by rendering every page as a high-resolution image and embedding it directly. This bypasses the typical text extraction bottlenecks of standard RAG (e.g., losing tables, diagrams, formatting, and mathematical equations) by treating document pages visually.
+Built with **FastAPI**, **LlamaIndex**, **Voyage AI**, **Gemini 1.5/2.5 Flash**, **LanceDB**, **Celery**, and a **React + TypeScript + Vite** frontend, this monorepo indexes PDF documents by rendering every page as a high-resolution image and embedding it directly. This bypasses the typical text extraction bottlenecks of standard RAG (e.g., losing tables, diagrams, formatting, and mathematical equations) by treating document pages visually.
 
 ---
 
@@ -89,21 +89,23 @@ graph TD
 ## Project Structure
 
 ```
-├── app/
-│   ├── api/               # API Router endpoints (documents, chat, health)
-│   ├── core/              # Core logic wrappers (embedding, llm, rag_engine, vector_store, render_engine)
-│   ├── db/                # PostgreSQL session config and base models
-│   ├── models/            # SQLAlchemy database models & Pydantic schemas
-│   ├── services/          # Business logic separation layer (document & chat services)
-│   ├── main.py            # FastAPI Application Entrypoint
-│   └── config.py          # Configuration management via Pydantic settings
-├── tasks/
-│   ├── celery_app.py      # Celery task manager entrypoint
-│   └── document_tasks.py  # Background workers for document rendering & indexing
-├── alembic/               # Database migrations scripts
-├── tests/                 # Integration and unit tests
-├── Dockerfile             # Production-grade multi-stage Docker build
-└── docker-compose.yml     # Local orchestration for API, Redis, Celery, Postgres
+├── backend/
+│   ├── app/               # FastAPI application (routers, services, core logic)
+│   ├── tasks/             # Celery worker entrypoints and background jobs
+│   ├── alembic/           # Database migrations scripts
+│   ├── tests/             # Backend integration and unit tests
+│   ├── Dockerfile         # Production-grade multi-stage Docker build
+│   └── docker-compose.yml # Local orchestration for API, Redis, Celery, Postgres
+├── frontend/
+│   ├── src/               # React + TypeScript application source
+│   │   ├── components/    # UI components for chat, documents, layout
+│   │   ├── pages/         # Route-level pages
+│   │   ├── api/           # API client wrapper for backend endpoints
+│   │   └── store/         # Zustand state management
+│   ├── package.json       # Frontend dependencies and scripts
+│   ├── vite.config.ts    # Vite config and API proxy settings
+│   └── index.html         # Frontend entry page
+└── README.md
 ```
 
 ---
@@ -127,18 +129,31 @@ GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 2. Launch Services with Docker
-Run the entire service stack (FastAPI web server, Celery worker, Redis queue, PostgreSQL database, and LanceDB volume mount):
+Run the backend service stack (FastAPI web server, Celery worker, Redis queue, PostgreSQL database, and LanceDB volume mount) from the backend folder:
 ```bash
+cd backend
 docker-compose up --build
 ```
 
 ### 3. Run Database Migrations
 Initialize the schema and tables in the PostgreSQL container:
 ```bash
+cd backend
 docker-compose exec api alembic upgrade head
 ```
 
-### 4. Test the Streaming Chat UI (Lightweight Tester)
+### 4. Run the Frontend (Development Mode)
+The React frontend can be started separately for local development:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Then open your browser at `http://localhost:3000`.
+
+The frontend uses Vite to proxy API calls to the backend. If you want to test against a local backend instead of the default configured target, update the proxy settings in `frontend/vite.config.ts`.
+
+### 5. Test the Streaming Chat UI (Lightweight Tester)
 To easily test the Server-Sent Events (SSE) streaming endpoint without building a full React/Vue frontend, this project includes a standalone, user-friendly tester (`test.html`).
 
 **Step 1: Serve the HTML file locally**
