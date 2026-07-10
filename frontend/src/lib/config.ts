@@ -1,9 +1,7 @@
-// Ganti ini saja kalau deploy ke production
 export const CONFIG = {
-  // API endpoint backend
-  API_BASE: "https://solid-fiesta-q7x59r5gvjp6hwgw-80.app.github.dev/api/v1",
+  API_BASE: "http://localhost:8000/api/v1",
 
-  // Static assets (images) dari backend
-  // Kalau pakai Vite proxy dev, bisa juga cukup "/data"
-  STATIC_BASE: "https://solid-fiesta-q7x59r5gvjp6hwgw-80.app.github.dev/data",
+  // Static assets (images) from backend
+  // If you're using the Vite dev proxy, just "/data" might be enough.
+  STATIC_BASE: "http://localhost:8000/data",
 };
