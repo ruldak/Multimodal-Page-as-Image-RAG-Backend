@@ -1,19 +1,17 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: { "@": path.resolve(__dirname, "./src") },
+  },
   server: {
-    port: 3000,
+    port: 5173,
     proxy: {
-      '/api': {
-        target: 'https://solid-fiesta-q7x59r5gvjp6hwgw-80.app.github.dev',
-        changeOrigin: true,
-      },
-      '/data': {
-        target: 'https://solid-fiesta-q7x59r5gvjp6hwgw-80.app.github.dev',
-        changeOrigin: true,
-      },
+      "/api": { target: "http://localhost:8000", changeOrigin: true },
+      "/data": { target: "http://localhost:8000", changeOrigin: true },
     },
   },
-})
+});

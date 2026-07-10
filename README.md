@@ -149,7 +149,7 @@ cd frontend
 npm install
 npm run dev
 ```
-Then open your browser at `http://localhost:3000`.
+Then open your browser at `http://localhost:5173`.
 
 The frontend uses Vite to proxy API calls to the backend. If you want to test against a local backend instead of the default configured target, update the proxy settings in `frontend/vite.config.ts`.
 
