@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatRelative, cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   MessageSquare, Plus, Trash2, Send, Bot, User, Loader2,
   FileText, ChevronRight, Sparkles, PanelLeftClose, Pencil, PanelLeft, Check, X
@@ -209,7 +211,15 @@ export function ChatPage() {
                           ? "bg-white border border-slate-200 text-slate-800 rounded-tl-none"
                           : "bg-primary-600 text-white rounded-tr-none"
                       )}>
-                        {msg.content}
+                        {msg.role === "assistant" ? (
+                          <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:p-3 prose-pre:rounded-lg prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-pink-600 prose-code:before:content-none prose-code:after:content-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {msg.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <span>{msg.content}</span>
+                        )}
                       </div>
                       {msg.sources.length > 0 && (
                         <div className="flex flex-wrap gap-2">
@@ -248,7 +258,11 @@ export function ChatPage() {
                   </div>
                   <div className="space-y-2 max-w-[90%] md:max-w-[80%]">
                     <div className="px-3 md:px-4 py-2.5 md:py-3 rounded-2xl rounded-tl-none bg-white border border-slate-200 text-slate-800 text-sm shadow-sm break-words">
-                      {stream.text}
+                      <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:p-3 prose-pre:rounded-lg prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-pink-600 prose-code:before:content-none prose-code:after:content-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {stream.text}
+                        </ReactMarkdown>
+                      </div>
                       <span className="inline-block w-1.5 h-4 md:w-2 md:h-4 bg-primary-500 ml-1 animate-pulse align-middle" />
                     </div>
                     {stream.sources.length > 0 && (
