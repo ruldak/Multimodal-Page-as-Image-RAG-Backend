@@ -5,6 +5,8 @@ An enterprise-ready, high-performance asynchronous REST API and React-based web 
 Built with **FastAPI**, **LlamaIndex**, **Voyage AI**, **Gemini 1.5/2.5 Flash**, **LanceDB**, **Celery**, and a **React + TypeScript + Vite** frontend, this monorepo indexes PDF documents by rendering every page as a high-resolution image and embedding it directly. This bypasses the typical text extraction bottlenecks of standard RAG (e.g., losing tables, diagrams, formatting, and mathematical equations) by treating document pages visually.
 
 ---
+![Demo UI Frontend](assets/frontend-demo.mp4)
+---
 
 ## What is "Page-as-Image" Multimodal RAG? (Layman-Friendly)
 
