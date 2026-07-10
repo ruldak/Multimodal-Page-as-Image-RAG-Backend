@@ -91,6 +91,11 @@ graph TD
 ```
 ├── backend/
 │   ├── app/               # FastAPI application (routers, services, core logic)
+│   │   ├── api/           # API endpoints for chat, documents, and health
+│   │   ├── core/          # Embedding, LLM, RAG, render, and vector store logic
+│   │   ├── db/            # Database session management
+│   │   ├── models/        # SQLAlchemy models and Pydantic schemas
+│   │   └── services/      # Business logic for chat and documents
 │   ├── tasks/             # Celery worker entrypoints and background jobs
 │   ├── alembic/           # Database migrations scripts
 │   ├── tests/             # Backend integration and unit tests
@@ -98,10 +103,13 @@ graph TD
 │   └── docker-compose.yml # Local orchestration for API, Redis, Celery, Postgres
 ├── frontend/
 │   ├── src/               # React + TypeScript application source
-│   │   ├── components/    # UI components for chat, documents, layout
-│   │   ├── pages/         # Route-level pages
-│   │   ├── api/           # API client wrapper for backend endpoints
-│   │   └── store/         # Zustand state management
+│   │   ├── components/    # UI components for chat, documents, layout, and shared UI
+│   │   │   ├── pages/     # Route-level pages
+│   │   │   └── ui/        # Reusable UI primitives
+│   │   ├── context/       # React context providers
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── lib/           # API client and utility helpers
+│   │   └── types/         # Shared TypeScript types
 │   ├── package.json       # Frontend dependencies and scripts
 │   ├── vite.config.ts    # Vite config and API proxy settings
 │   └── index.html         # Frontend entry page
