@@ -188,6 +188,46 @@ python -m http.server 8080
 
 ---
 
+## Running Tests
+
+The backend includes a suite of **unit and integration tests** built with `pytest` and `pytest-asyncio`. All external dependencies (PostgreSQL, Redis, LanceDB, Gemini, Voyage AI) are **mocked**, so you can run the tests without any external services running.
+
+### Run Tests Locally (without Docker)
+Make sure you have a Python 3.11+ environment with the required dependencies installed:
+
+```bash
+cd backend
+pip install -r requirements.txt
+pytest tests/ -v
+```
+
+### Run Tests Inside Docker
+You can also execute the tests inside the running API container:
+
+```bash
+cd backend
+docker-compose up -d api  # Start only the API container
+docker-compose exec api pytest tests/ -v
+```
+
+### Useful Pytest Options
+| Command | Description |
+|---|---|
+| `pytest tests/ -v` | Run all tests with verbose output |
+| `pytest tests/ -k "health"` | Run only tests matching "health" |
+| `pytest tests/ -k "chat"` | Run only chat-related tests |
+| `pytest tests/ -k "document"` | Run only document-related tests |
+| `pytest tests/ --tb=short` | Show short tracebacks on failures |
+
+### Test Coverage
+| Test File | What It Covers |
+|---|---|
+| `tests/test_health.py` | Health check endpoint with mocked external services |
+| `tests/test_chat.py` | SSE streaming chat with mocked RAG engine |
+| `tests/test_documents.py` | Document upload, listing, and MIME type validation |
+
+---
+
 ## API Endpoints Reference
 
 ### Document Management
