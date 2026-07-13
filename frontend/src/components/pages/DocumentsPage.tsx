@@ -141,6 +141,8 @@ export function DocumentsPage() {
                     </div>
                   </div>
                   <Badge variant={doc.status}>{doc.status}</Badge>
+                  
+                  {/* Desktop Actions */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex">
                     <Button variant="ghost" size="sm" onClick={() => openDetail(doc.id)}>
                       <Eye className="w-4 h-4" />
@@ -149,6 +151,8 @@ export function DocumentsPage() {
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>
+                  
+                  {/* Mobile Actions (Always Visible) */}
                   <div className="flex items-center gap-1 sm:hidden">
                     <Button variant="ghost" size="sm" onClick={() => openDetail(doc.id)}>
                       <Eye className="w-4 h-4" />
@@ -165,8 +169,10 @@ export function DocumentsPage() {
       </Card>
 
       {selectedId && (
+        // Di bagian return {selectedId && (...)}
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 md:p-8 animate-fade-in">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto flex flex-col">
+          // Ubah dari `w-full` menjadi `w-[calc(100vw-1.5rem)] md:w-full`
+          <Card className="w-[calc(100vw-1.5rem)] md:w-full max-w-4xl max-h-[90vh] overflow-auto flex flex-col">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-4 md:px-6 py-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3 min-w-0">
                 <Button variant="ghost" size="sm" onClick={() => setSelectedId(null)} className="shrink-0">
