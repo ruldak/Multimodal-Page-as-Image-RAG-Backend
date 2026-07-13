@@ -84,92 +84,127 @@ export function ChatPage() {
   };
 
   return (
-    // KUNCI 1: Mobile menggunakan 6rem (Navbar + padding kecil), Desktop 8rem. 
-    // overflow-x-hidden & max-w-full MENCEGAH layar HP bisa di-zoom out / geser kanan-kiri.
-    <div className="flex flex-col lg:flex-row h-[100vh-6rem] lg:h-[calc(100vh-8rem)] gap-4 lg:gap-6 animate-fade-in overflow-x-hidden max-w-full">
-      
-      {/* Session List */}
-      <Card className={cn(
-        "flex flex-col overflow-hidden transition-all duration-300 ease-in-out shrink-0",
-        showSessionList ? "lg:w-72 w-full max-h-[40vh] lg:max-h-none lg:h-auto" : "lg:w-0 w-full h-0 lg:h-auto overflow-hidden opacity-0 lg:opacity-100"
-      )}>
-        <div className="p-3 lg:p-4 border-b border-slate-200 flex items-center justify-between gap-2">
-          <Button className="w-full" size="sm" onClick={() => setShowNewChat(true)}>
-            <Plus className="w-4 h-4 mr-2" /> New Chat
-          </Button>
-          <button
-            className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+    // KUNCI: h-full untuk memastikan container mengisi parent, overflow-hidden untuk mencegah scroll horizontal
+    <div className="flex h-full overflow-hidden animate-fade-in">
+
+      {/* Session List Sidebar */}
+      {/* Mobile: overlay fixed di kiri, Desktop: sidebar biasa yang bisa di-collapse */}
+      <>
+        {/* Mobile overlay backdrop */}
+        {showSessionList && (
+          <div 
+            className="fixed inset-0 bg-black/30 z-30 lg:hidden"
             onClick={() => setShowSessionList(false)}
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-auto p-2 space-y-1">
-          {sessions.length === 0 && !loading && (
-            <div className="text-center py-8 text-slate-400 text-xs">No chat sessions yet</div>
-          )}
-          {sessions.map((s) => (
-            <div
-              key={s.id}
-              className={cn(
-                "group relative w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-3",
-                activeSession?.id === s.id ? "bg-primary-50 text-primary-900 border border-primary-100" : "hover:bg-slate-50 text-slate-700"
-              )}
+          />
+        )}
+
+        <Card className={cn(
+          "flex flex-col overflow-hidden transition-all duration-300 ease-in-out shrink-0 z-40",
+          // Mobile: fixed sidebar di kiri, full height
+          "fixed lg:static inset-y-0 left-0",
+          // Mobile: translate-x untuk toggle
+          showSessionList ? "translate-x-0" : "-translate-x-full",
+          // Width: 72 (288px) saat terbuka, 0 saat tertutup — berlaku untuk mobile & desktop
+          showSessionList ? "w-72" : "w-0",
+          // Desktop: padding & margin disesuaikan saat collapse
+          showSessionList ? "lg:mr-6" : "lg:mr-0",
+          // Saat tertutup di desktop: sembunyikan konten & border
+          !showSessionList && "lg:border-0 lg:p-0",
+          // Saat tertutup: opacity-0 untuk smooth transition
+          !showSessionList && "opacity-0 lg:opacity-0"
+        )}>
+          <div className={cn(
+            "p-3 lg:p-4 border-b border-slate-200 flex items-center justify-between gap-2",
+            !showSessionList && "lg:hidden"
+          )}>
+            <Button className="w-full" size="sm" onClick={() => setShowNewChat(true)}>
+              <Plus className="w-4 h-4 mr-2" /> New Chat
+            </Button>
+            <button
+              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+              onClick={() => setShowSessionList(false)}
             >
-              <button
-                onClick={() => { loadSession(s.id); setShowSessionList(false); }}
-                className="flex items-start gap-3 flex-1 min-w-0 text-left"
-              >
-                <MessageSquare className={cn("w-4 h-4 mt-0.5 shrink-0", activeSession?.id === s.id ? "text-primary-600" : "text-slate-400")} />
-                <div className="flex-1 min-w-0">
-                  {editingId === s.id ? (
-                    <input
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") { e.stopPropagation(); saveEdit(s.id); }
-                        if (e.key === "Escape") { e.stopPropagation(); cancelEdit(); }
-                      }}
-                      className="w-full h-6 px-1.5 text-xs rounded border border-primary-300 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-                      autoFocus
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <p className="font-medium truncate text-xs">{s.title}</p>
-                  )}
-                  <p className="text-[10px] text-slate-400 mt-0.5">{formatRelative(s.created_at)}</p>
-                </div>
-              </button>
-              <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                {editingId === s.id ? (
-                  <>
-                    <button onClick={() => saveEdit(s.id)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded">
-                      <Check className="w-3 h-3" />
-                    </button>
-                    <button onClick={cancelEdit} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => startEdit(s)} className="p-1 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded">
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button onClick={() => deleteSession(s.id)} className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </>
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          </div>
+          <div className={cn(
+            "flex-1 overflow-auto p-2 space-y-1",
+            !showSessionList && "lg:hidden"
+          )}>
+            {sessions.length === 0 && !loading && (
+              <div className="text-center py-8 text-slate-400 text-xs">No chat sessions yet</div>
+            )}
+            {sessions.map((s) => (
+              <div
+                key={s.id}
+                className={cn(
+                  "group relative w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-3",
+                  activeSession?.id === s.id ? "bg-primary-50 text-primary-900 border border-primary-100" : "hover:bg-slate-50 text-slate-700"
                 )}
+              >
+                <button
+                  onClick={() => { loadSession(s.id); setShowSessionList(false); }}
+                  className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                >
+                  <MessageSquare className={cn("w-4 h-4 mt-0.5 shrink-0", activeSession?.id === s.id ? "text-primary-600" : "text-slate-400")} />
+                  <div className="flex-1 min-w-0">
+                    {editingId === s.id ? (
+                      <input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.stopPropagation(); saveEdit(s.id); }
+                          if (e.key === "Escape") { e.stopPropagation(); cancelEdit(); }
+                        }}
+                        className="w-full h-6 px-1.5 text-xs rounded border border-primary-300 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <p className="font-medium truncate text-xs">{s.title}</p>
+                    )}
+                    <p className="text-[10px] text-slate-400 mt-0.5">{formatRelative(s.created_at)}</p>
+                  </div>
+                </button>
+                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {editingId === s.id ? (
+                    <>
+                      <button onClick={() => saveEdit(s.id)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded">
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button onClick={cancelEdit} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(s)} className="p-1 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => deleteSession(s.id)} className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      </>
 
       {/* Chat Area */}
       <Card className="flex-1 flex flex-col overflow-hidden min-w-0 min-h-0">
         {!activeSession ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-6">
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-6 relative">
+            {/* Toggle button di pojok kiri atas */}
+            <button
+              onClick={() => setShowSessionList((p) => !p)}
+              className="absolute top-4 left-4 p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+              title={showSessionList ? "Hide sessions" : "Show sessions"}
+            >
+              {showSessionList ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+            </button>
             <Sparkles className="w-12 h-12 mb-4 text-slate-300" />
             <p className="text-sm font-medium text-center">Select a chat session or create a new one</p>
           </div>
@@ -195,7 +230,7 @@ export function ChatPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 bg-slate-50/30">
               {activeSession.messages.map((msg) => (
                 <div key={msg.id} className={cn("flex gap-2 sm:gap-3 md:gap-4", msg.role === "user" ? "justify-end" : "justify-start")}>
