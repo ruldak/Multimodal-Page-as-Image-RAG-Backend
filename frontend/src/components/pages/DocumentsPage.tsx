@@ -69,7 +69,7 @@ export function DocumentsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in">
       <Card className="p-4 md:p-8">
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -169,9 +169,7 @@ export function DocumentsPage() {
       </Card>
 
       {selectedId && (
-        // Di bagian return {selectedId && (...)}
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 md:p-8 animate-fade-in">
-          // Ubah dari `w-full` menjadi `w-[calc(100vw-1.5rem)] md:w-full`
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center animate-fade-in">
           <Card className="w-[calc(100vw-1.5rem)] md:w-full max-w-4xl max-h-[90vh] overflow-auto flex flex-col">
             <div className="sticky top-0 bg-white border-b border-slate-200 px-4 md:px-6 py-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3 min-w-0">
