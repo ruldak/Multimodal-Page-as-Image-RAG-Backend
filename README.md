@@ -74,7 +74,7 @@ graph TD
 | **Embeddings** | **Voyage Multimodal 3.5** | Top-performing multimodal embedding model. Projects both text queries and raw images (represented as PIL images) into the same shared `1024-dimensional` vector space. |
 | **LLM Model** | **Gemini 1.5 / 2.5 Flash** | Chosen for its massive context window, exceptional multimodal (image + text) performance, low latency, and native support for interleaved image and text inputs via the official `google-genai` SDK. |
 | **Metadata Store** | **PostgreSQL** | Relational store for sessions, chat messages, page metadata, and citation tracking. Interfaced using **SQLAlchemy 2.0** (Async API) and mapped with **Alembic** migrations. |
-| **Background Tasks** | **Celery** + **Redis** | Decouples heavy rendering (pdf2image) and batch embedding operations from the API event loop. Concurrency is limited to **1** due to LanceDB's single-writer locking constraints. |
+| Background Tasks | Celery + Redis | Decouples heavy rendering and batch embedding. Enhanced with **chunked rendering** to prevent OOM crashes, and **SoftTimeLimit** for graceful degradation and partial success handling on massive files. Concurrency limited to 1 due to LanceDB locking. |
 | **PDF Rendering** | **pdf2image** + **Poppler** | Compiles PDFs into high-fidelity rasterized PNG images at configurable DPI resolution, optimizing them for visual comprehension by the embedding model. |
 
 ---
@@ -86,6 +86,8 @@ graph TD
 - **Deferred Indexing**: Prevents vector store errors by waiting to call LanceDB's `create_index` until data exists in the table.
 - **Stateful Conversational Memory**: Manages chat sessions in PostgreSQL, keeping track of preceding messages and injecting context dynamically into Gemini's multi-turn conversational interface.
 - **Robust Exception Handling**: Global HTTP handlers manage upstream API failures (Gemini/Voyage), database errors, and document-readiness states, returning clean JSON payloads.
+- **Memory-Safe PDF Ingestion:** Implemented chunked rendering with explicit garbage collection (`gc.collect()`) in the `pdf2image` pipeline. This ensures a flat, predictable RAM footprint, preventing Out-Of-Memory (OOM) crashes when processing massive enterprise documents.
+- **Resilient Task Orchestration:** Engineered Celery workers with `SoftTimeLimitExceeded` and partial success handling. If a subset of pages fails to embed (e.g., API timeouts), the system successfully indexes the valid pages, logs the partial failures, and avoids catastrophic full-document retries.
 
 ---
 
