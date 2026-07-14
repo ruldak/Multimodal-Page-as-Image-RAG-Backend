@@ -84,120 +84,107 @@ export function ChatPage() {
   };
 
   return (
-    // KUNCI: h-full untuk memastikan container mengisi parent, overflow-hidden untuk mencegah scroll horizontal
-    <div className="flex h-full overflow-hidden animate-fade-in">
+    <div className="flex h-[calc(100dvh-3rem)] lg:h-[calc(100dvh-8rem)] overflow-hidden bg-white animate-fade-in">
 
-      {/* Session List Sidebar */}
-      {/* Mobile: overlay fixed di kiri, Desktop: sidebar biasa yang bisa di-collapse */}
-      <>
-        {/* Mobile overlay backdrop */}
-        {showSessionList && (
-          <div 
-            className="fixed inset-0 bg-black/30 z-30 lg:hidden"
-            onClick={() => setShowSessionList(false)}
-          />
-        )}
+      {/* Mobile overlay */}
+      {showSessionList && (
+        <div 
+          className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+          onClick={() => setShowSessionList(false)}
+        />
+      )}
 
-        <Card className={cn(
-          "flex flex-col overflow-hidden transition-all duration-300 ease-in-out shrink-0 z-40",
-          // Mobile: fixed sidebar di kiri, full height
-          "fixed lg:static inset-y-0 left-0",
-          // Mobile: translate-x untuk toggle
-          showSessionList ? "translate-x-0" : "-translate-x-full",
-          // Width: 72 (288px) saat terbuka, 0 saat tertutup — berlaku untuk mobile & desktop
-          showSessionList ? "w-72" : "w-0",
-          // Desktop: padding & margin disesuaikan saat collapse
-          showSessionList ? "lg:mr-6" : "lg:mr-0",
-          // Saat tertutup di desktop: sembunyikan konten & border
-          !showSessionList && "lg:border-0 lg:p-0",
-          // Saat tertutup: opacity-0 untuk smooth transition
-          !showSessionList && "opacity-0 lg:opacity-0"
+      {/* Sidebar */}
+      <aside className={cn(
+        "flex flex-col overflow-hidden transition-all duration-300 ease-in-out shrink-0 z-40 lg:z-0 bg-white border-r border-slate-200",
+        "fixed lg:static inset-y-0 left-0",
+        showSessionList ? "w-72 translate-x-0" : "w-0 -translate-x-full lg:translate-x-0 lg:w-0"
+      )}>
+        <div className={cn(
+          "p-3 lg:p-4 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0",
+          !showSessionList && "lg:hidden"
         )}>
-          <div className={cn(
-            "p-3 lg:p-4 border-b border-slate-200 flex items-center justify-between gap-2",
-            !showSessionList && "lg:hidden"
-          )}>
-            <Button className="w-full" size="sm" onClick={() => setShowNewChat(true)}>
-              <Plus className="w-4 h-4 mr-2" /> New Chat
-            </Button>
-            <button
-              className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-              onClick={() => setShowSessionList(false)}
+          <Button className="w-full" size="sm" onClick={() => setShowNewChat(true)}>
+            <Plus className="w-4 h-4 mr-2" /> New Chat
+          </Button>
+          <button
+            className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+            onClick={() => setShowSessionList(false)}
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </button>
+        </div>
+        <div className={cn(
+          "flex-1 min-h-0 overflow-auto p-2 space-y-1",
+          !showSessionList && "lg:hidden"
+        )}>
+          {sessions.length === 0 && !loading && (
+            <div className="text-center py-8 text-slate-400 text-xs">No chat sessions yet</div>
+          )}
+          {sessions.map((s) => (
+            <div
+              key={s.id}
+              className={cn(
+                "group relative w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-3",
+                activeSession?.id === s.id ? "bg-primary-50 text-primary-900 border border-primary-100" : "hover:bg-slate-50 text-slate-700"
+              )}
             >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
-          </div>
-          <div className={cn(
-            "flex-1 overflow-auto p-2 space-y-1",
-            !showSessionList && "lg:hidden"
-          )}>
-            {sessions.length === 0 && !loading && (
-              <div className="text-center py-8 text-slate-400 text-xs">No chat sessions yet</div>
-            )}
-            {sessions.map((s) => (
               <div
-                key={s.id}
-                className={cn(
-                  "group relative w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-3",
-                  activeSession?.id === s.id ? "bg-primary-50 text-primary-900 border border-primary-100" : "hover:bg-slate-50 text-slate-700"
-                )}
+                onClick={() => { loadSession(s.id); setShowSessionList(false); }}
+                className="flex items-start gap-3 flex-1 min-w-0 text-left cursor-pointer"
               >
-                <button
-                  onClick={() => { loadSession(s.id); setShowSessionList(false); }}
-                  className="flex items-start gap-3 flex-1 min-w-0 text-left"
-                >
-                  <MessageSquare className={cn("w-4 h-4 mt-0.5 shrink-0", activeSession?.id === s.id ? "text-primary-600" : "text-slate-400")} />
-                  <div className="flex-1 min-w-0">
-                    {editingId === s.id ? (
-                      <input
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") { e.stopPropagation(); saveEdit(s.id); }
-                          if (e.key === "Escape") { e.stopPropagation(); cancelEdit(); }
-                        }}
-                        className="w-full h-6 px-1.5 text-xs rounded border border-primary-300 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    ) : (
-                      <p className="font-medium truncate text-xs">{s.title}</p>
-                    )}
-                    <p className="text-[10px] text-slate-400 mt-0.5">{formatRelative(s.created_at)}</p>
-                  </div>
-                </button>
-                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <MessageSquare className={cn("w-4 h-4 mt-0.5 shrink-0", activeSession?.id === s.id ? "text-primary-600" : "text-slate-400")} />
+                <div className="flex-1 min-w-0">
                   {editingId === s.id ? (
-                    <>
-                      <button onClick={() => saveEdit(s.id)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded">
-                        <Check className="w-3 h-3" />
-                      </button>
-                      <button onClick={cancelEdit} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </>
+                    <input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { saveEdit(s.id); }
+                        if (e.key === "Escape") { cancelEdit(); }
+                      }}
+                      className="w-full h-6 px-1.5 text-xs rounded border border-primary-300 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   ) : (
                     <>
-                      <button onClick={() => startEdit(s)} className="p-1 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded">
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => deleteSession(s.id)} className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <p className="font-medium truncate text-xs">{s.title}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{formatRelative(s.created_at)}</p>
                     </>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      </>
+              <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                {editingId === s.id ? (
+                  <>
+                    <button onClick={() => saveEdit(s.id)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded">
+                      <Check className="w-3 h-3" />
+                    </button>
+                    <button onClick={cancelEdit} className="p-1 text-slate-400 hover:bg-slate-100 rounded">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => startEdit(s)} className="p-1 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded">
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => deleteSession(s.id)} className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
 
       {/* Chat Area */}
-      <Card className="flex-1 flex flex-col overflow-hidden min-w-0 min-h-0">
+      <main className="flex-1 flex flex-col w-1 min-h-0 overflow-hidden">
         {!activeSession ? (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-6 relative">
-            {/* Toggle button di pojok kiri atas */}
             <button
               onClick={() => setShowSessionList((p) => !p)}
               className="absolute top-4 left-4 p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
@@ -210,7 +197,7 @@ export function ChatPage() {
           </div>
         ) : (
           <>
-            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 shrink-0">
+            <header className="shrink-0 px-4 md:px-6 py-3 md:py-4 border-b border-slate-200 flex items-center justify-between bg-white">
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   onClick={() => setShowSessionList((p) => !p)}
@@ -221,25 +208,20 @@ export function ChatPage() {
                 </button>
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-slate-900 truncate">{activeSession.title}</h3>
-                  {activeSession.document_id && (
-                    <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-500">
-                      <FileText className="w-3 h-3" />
-                      <span>RAG Mode Active</span>
-                    </div>
-                  )}
                 </div>
               </div>
-            </div>
+            </header>
 
+            {/* Messages */}
             <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 bg-slate-50/30">
               {activeSession.messages.map((msg) => (
-                <div key={msg.id} className={cn("flex gap-2 sm:gap-3 md:gap-4", msg.role === "user" ? "justify-end" : "justify-start")}>
+                <div key={msg.id} className={cn("flex gap-2 max-w-[100%] sm:gap-3 md:gap-4", msg.role === "user" ? "justify-end" : "justify-start")}>
                   <div className={cn("flex gap-2 sm:gap-3 max-w-[85%] sm:max-w-[80%] md:max-w-[70%]", msg.role === "user" && "flex-row-reverse")}>
                     <div className={cn(
                       "w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
                       msg.role === "assistant" ? "bg-primary-100 text-primary-700" : "bg-slate-200 text-slate-600"
                     )}>
-                      {msg.role === "assistant" ? <Bot className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <User className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+                      {msg.role === "assistant" ? <Bot className="w-3 h-3 md:w-4 md:h-4" /> : <User className="w-3 h-3 md:w-4 md:h-4" />}
                     </div>
                     <div className={cn("space-y-2 min-w-0 flex-1", msg.role === "user" && "flex flex-col items-end")}>
                       <div className={cn(
@@ -249,9 +231,21 @@ export function ChatPage() {
                           : "bg-primary-600 text-white rounded-tr-none"
                       )}>
                         {msg.role === "assistant" ? (
-                          // KUNCI 2: Wrapper overflow-x-auto mencegah tabel/code block AI menggeser layar HP (Zoom out issue solved)
-                          <div className="w-full max-w-full overflow-x-auto">
-                            <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:p-3 prose-pre:rounded-lg prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-pink-600 prose-code:before:content-none prose-code:after:content-none prose-table:block prose-table:overflow-x-auto">
+                          <div className="w-full min-w-0 overflow-x-auto">
+                            <div className="prose prose-sm max-w-none min-w-0
+                              prose-p:text-xs sm:prose-p:text-sm
+                              prose-li:text-xs sm:prose-li:text-sm
+                              prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:p-2 sm:prose-pre:p-3 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:max-w-full prose-pre:text-[10px] sm:prose-pre:text-xs
+                              prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-pink-600 prose-code:before:content-none prose-code:after:content-none prose-code:break-all prose-code:text-[10px] sm:prose-code:text-xs
+                              prose-table:w-full prose-table:table-fixed prose-table:overflow-x-auto prose-table:block
+                              prose-th:text-[10px] sm:prose-th:text-xs prose-td:text-[10px] sm:prose-td:text-xs
+                              prose-th:whitespace-nowrap prose-td:whitespace-nowrap prose-th:overflow-hidden prose-td:overflow-hidden prose-th:text-ellipsis prose-td:text-ellipsis
+                              prose-headings:text-xs sm:prose-headings:text-sm
+                              prose-h1:text-sm sm:prose-h1:text-lg
+                              prose-h2:text-xs sm:prose-h2:text-base
+                              prose-h3:text-xs sm:prose-h3:text-base
+                              prose-strong:text-xs sm:prose-strong:text-sm
+                              prose-img:max-w-full">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {msg.content}
                               </ReactMarkdown>
@@ -262,7 +256,6 @@ export function ChatPage() {
                         )}
                       </div>
                       {msg.sources.length > 0 && (
-                        // KUNCI 3: flex-nowrap membuat gambar sumber berjejer ke samping (horizontal scroll) alih-alih menumpuk ke bawah
                         <div className="flex flex-nowrap gap-2 w-full max-w-full overflow-x-auto pb-2">
                           {msg.sources.map((src, idx) => (
                             <div key={idx} className="group relative shrink-0">
@@ -298,8 +291,21 @@ export function ChatPage() {
                   </div>
                   <div className="space-y-2 max-w-[85%] sm:max-w-[80%] md:max-w-[70%] min-w-0 flex-1">
                     <div className="px-3 md:px-4 py-2.5 md:py-3 rounded-2xl rounded-tl-none bg-white border border-slate-200 text-slate-800 text-sm shadow-sm break-words">
-                      <div className="w-full max-w-full overflow-x-auto">
-                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:p-3 prose-pre:rounded-lg prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-pink-600 prose-code:before:content-none prose-code:after:content-none prose-table:block prose-table:overflow-x-auto">
+                      <div className="w-full min-w-0 overflow-x-auto">
+                        <div className="prose prose-sm max-w-none min-w-0
+                          prose-p:text-xs sm:prose-p:text-sm
+                          prose-li:text-xs sm:prose-li:text-sm
+                          prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:p-2 sm:prose-pre:p-3 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-pre:max-w-full prose-pre:text-[10px] sm:prose-pre:text-xs
+                          prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-pink-600 prose-code:before:content-none prose-code:after:content-none prose-code:break-all prose-code:text-[10px] sm:prose-code:text-xs
+                          prose-table:w-full prose-table:table-fixed prose-table:overflow-x-auto prose-table:block
+                          prose-th:text-[10px] sm:prose-th:text-xs prose-td:text-[10px] sm:prose-td:text-xs
+                          prose-th:whitespace-nowrap prose-td:whitespace-nowrap prose-th:overflow-hidden prose-td:overflow-hidden prose-th:text-ellipsis prose-td:text-ellipsis
+                          prose-headings:text-xs sm:prose-headings:text-sm
+                          prose-h1:text-sm sm:prose-h1:text-lg
+                          prose-h2:text-xs sm:prose-h2:text-base
+                          prose-h3:text-xs sm:prose-h3:text-base
+                          prose-strong:text-xs sm:prose-strong:text-sm
+                          prose-img:max-w-full">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {stream.text}
                           </ReactMarkdown>
@@ -321,7 +327,9 @@ export function ChatPage() {
               )}
               <div ref={messagesEndRef} />
             </div>
-            <div className="p-3 md:p-4 border-t border-slate-200 bg-white shrink-0">
+
+            {/* Input */}
+            <div className="shrink-0 p-3 md:p-4 border-t border-slate-200 bg-white">
               <div className="flex gap-2 md:gap-3">
                 <input
                   value={input}
@@ -337,7 +345,7 @@ export function ChatPage() {
             </div>
           </>
         )}
-      </Card>
+      </main>
 
       {/* New Chat Modal */}
       {showNewChat && (
