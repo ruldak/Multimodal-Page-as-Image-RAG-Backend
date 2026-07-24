@@ -1,7 +1,4 @@
 export const CONFIG = {
-  API_BASE: "http://localhost:8000/api/v1",
-
-  // Static assets (images) from backend
-  // If you're using the Vite dev proxy, just "/data" might be enough.
-  STATIC_BASE: "http://localhost:8000/data",
+  API_BASE: import.meta.env.VITE_API_BASE || "/api/v1",
+  STATIC_BASE: import.meta.env.VITE_STATIC_BASE || "/data",
 };

@@ -1,0 +1,5 @@
+:8090 {
+    reverse_proxy /api/* http://localhost:8000
+    reverse_proxy /data/* http://localhost:8000
+    reverse_proxy /* http://localhost:3000
+}
