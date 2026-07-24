@@ -103,9 +103,7 @@ graph TD
 │   │   └── services/      # Business logic for chat and documents
 │   ├── tasks/             # Celery worker entrypoints and background jobs
 │   ├── alembic/           # Database migrations scripts
-│   ├── tests/             # Backend integration and unit tests
-│   ├── Dockerfile         # Production-grade multi-stage Docker build
-│   └── docker-compose.yml # Local orchestration for API, Redis, Celery, Postgres
+│   └── tests/             # Backend integration and unit tests
 ├── frontend/
 │   ├── src/               # React + TypeScript application source
 │   │   ├── components/    # UI components for chat, documents, layout, and shared UI
@@ -116,8 +114,11 @@ graph TD
 │   │   ├── lib/           # API client and utility helpers
 │   │   └── types/         # Shared TypeScript types
 │   ├── package.json       # Frontend dependencies and scripts
-│   ├── vite.config.ts    # Vite config and API proxy settings
+│   ├── vite.config.ts     # Vite config and API proxy settings
 │   └── index.html         # Frontend entry page
+├── docker-compose.yml     # Local orchestration for API, Redis, Celery, Postgres, and Frontend
+├── Dockerfile.backend     # Production-grade backend Docker build
+├── Dockerfile.frontend    # Production-grade frontend Docker build
 └── README.md
 ```
 
@@ -131,32 +132,32 @@ graph TD
 - Google Gemini API Key ([Google AI Studio](https://aistudio.google.com/)).
 
 ### 1. Setup Environment Variables
-Clone the `.env.example` template into `.env`:
+Navigate to the `backend` folder and clone the `.env.example` template into `.env`:
 ```bash
+cd backend
 cp .env.example .env
 ```
-Open `.env` and fill in your API keys:
+Open `backend/.env` and fill in your API keys:
 ```env
 VOYAGE_API_KEY=your_voyage_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 2. Launch Services with Docker
-Run the backend service stack (FastAPI web server, Celery worker, Redis queue, PostgreSQL database, and LanceDB volume mount) from the backend folder:
+Run the full service stack (FastAPI web server, React frontend, Celery worker, Redis queue, PostgreSQL database, and LanceDB volume mount) from the root folder:
 ```bash
-cd backend
 docker-compose up --build
 ```
+Once the stack is running, you can access the frontend by opening your browser at `http://localhost:3000`.
 
 ### 3. Run Database Migrations
-Initialize the schema and tables in the PostgreSQL container:
+Initialize the schema and tables in the PostgreSQL container. Open a new terminal instance in the root folder:
 ```bash
-cd backend
 docker-compose exec api alembic upgrade head
 ```
 
-### 4. Run the Frontend (Development Mode)
-The React frontend can be started separately for local development:
+### 4. Run the Frontend Locally (Optional)
+If you prefer running the React frontend outside of Docker for active UI development:
 ```bash
 cd frontend
 npm install
