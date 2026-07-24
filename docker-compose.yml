@@ -26,7 +26,7 @@ services:
   api:
     build:
       context: ./backend
-      dockerfile: ../Dockerfile.backend
+      dockerfile: Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./backend:/app
@@ -45,7 +45,7 @@ services:
   worker:
     build:
       context: ./backend
-      dockerfile: ../Dockerfile.backend
+      dockerfile: Dockerfile
     command: celery -A tasks.celery_app worker --loglevel=info --concurrency=1
     volumes:
       - ./backend:/app
@@ -62,7 +62,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: ../Dockerfile.frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     depends_on:
